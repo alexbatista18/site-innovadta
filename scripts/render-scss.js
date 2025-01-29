@@ -1,42 +1,33 @@
-'use strict';
-const autoprefixer = require('autoprefixer')
-const fs = require('fs');
-const packageJSON = require('../package.json');
-const upath = require('upath');
-const postcss = require('postcss')
-const sass = require('sass');
-const sh = require('shelljs');
+"use strict";
+const fs = require("fs");
+const packageJSON = require("../package.json");
+const upath = require("upath");
+const postcss = require("postcss");
+const sh = require("shelljs");
 
-const stylesPath = '../src/scss/styles.scss';
-const destPath = upath.resolve(upath.dirname(__filename), '../dist/css/styles.css');
+const stylesPath = upath.resolve(
+    upath.dirname(__filename),
+    "../src/css/styles.css"
+);
+const destPath = upath.resolve(
+    upath.dirname(__filename),
+    "../dist/css/style.css"
+); // Destino para o CSS compilado
 
-module.exports = function renderSCSS() {
-    
-    const results = sass.renderSync({
-        data: entryPoint,
-        includePaths: [
-            upath.resolve(upath.dirname(__filename), '../node_modules')
-        ],
-      });
+module.exports = function renderCSS() {
+    const cssContent = fs.readFileSync(stylesPath, "utf8"); // Lê o conteúdo do arquivo CSS
 
     const destPathDirname = upath.dirname(destPath);
-    if (!sh.test('-e', destPathDirname)) {
-        sh.mkdir('-p', destPathDirname);
+    if (!sh.test("-e", destPathDirname)) {
+        sh.mkdir("-p", destPathDirname); // Cria o diretório de destino, se necessário
     }
 
-    postcss([ autoprefixer ]).process(results.css, {from: 'styles.css', to: 'styles.css'}).then(result => {
-        result.warnings().forEach(warn => {
-            console.warn(warn.toString())
-        })
-        fs.writeFileSync(destPath, result.css.toString());
-    })
-
+    postcss([require("autoprefixer")]) // Usa o Autoprefixer para adicionar prefixos aos navegadores
+        .process(cssContent, { from: stylesPath, to: destPath })
+        .then((result) => {
+            result.warnings().forEach((warn) => {
+                console.warn(warn.toString());
+            });
+            fs.writeFileSync(destPath, result.css.toString()); // Salva o CSS processado
+        });
 };
-
-const entryPoint = `/*!
-* Start Bootstrap - ${packageJSON.title} v${packageJSON.version} (${packageJSON.homepage})
-* Copyright 2013-${new Date().getFullYear()} ${packageJSON.author}
-* Licensed under ${packageJSON.license} (https://github.com/StartBootstrap/${packageJSON.name}/blob/master/LICENSE)
-*/
-@import "${stylesPath}"
-`
